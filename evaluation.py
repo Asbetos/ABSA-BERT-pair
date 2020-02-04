@@ -28,23 +28,22 @@ def get_y_true():
     #             n = 2
     #         y_true.append(n)
     # else:
-    true_data_file = "data/semeval2014/bert-pair/test_NLI_M.csv"
+    true_data_file = "/content/drive/My Drive/Dataset/test_1910.csv"
 
     df = pd.read_csv(true_data_file,sep='\t',header=None).values
     y_true=[]
     for i in range(len(df)):
         label = df[i][1]
-        assert label in ['positive', 'neutral', 'negative', 'conflict', 'none'], "error!"
-        if label == 'positive':
+        assert label in ['positive', 'neutral', 'negative', 'none'], "error!"
+        if label == 'negative':
             n = 0
-        elif label == 'neutral':
+        elif label == 'positive':
             n = 1
-        elif label == 'negative':
+        elif label == 'neutral':
             n = 2
-        elif label == 'conflict':
-            n = 3
         elif label == 'none':
-            n = 4
+            n = 3
+
         y_true.append(n)
     
     return y_true
@@ -407,15 +406,15 @@ def main():
     #             'sentiment_Acc': sentiment_Acc,
     #             'sentiment_Macro_AUC': sentiment_Macro_AUC}
     # else:
-    y_true = get_y_true(args.task_name)
-    y_pred, score = get_y_pred(args.task_name, args.pred_data_dir)
+    y_true = get_y_true()
+    y_pred, score = get_y_pred(args.pred_data_dir)
     aspect_P, aspect_R, aspect_F = semeval_PRF(y_true, y_pred)
     sentiment_Acc_4_classes = semeval_Acc(y_true, y_pred, score, 4)
     sentiment_Acc_3_classes = semeval_Acc(y_true, y_pred, score, 3)
     sentiment_Acc_2_classes = semeval_Acc(y_true, y_pred, score, 2)
-    result = {'aspect_P': aspect_P,
-            'aspect_R': aspect_R,
-            'aspect_F': aspect_F,
+    result = {'aspect_Precision': aspect_P,
+            'aspect_Recall': aspect_R,
+            'aspect_F1': aspect_F,
             'sentiment_Acc_4_classes': sentiment_Acc_4_classes,
             'sentiment_Acc_3_classes': sentiment_Acc_3_classes,
             'sentiment_Acc_2_classes': sentiment_Acc_2_classes}
