@@ -2,8 +2,8 @@ import argparse
 import collections
 import numpy as np
 import pandas as pd
-from sklearn import metrics
-from sklearn.preprocessing import label_binarize
+# from sklearn import metrics
+# from sklearn.preprocessing import label_binarize
 
 
 def get_y_true():
@@ -28,7 +28,7 @@ def get_y_true():
     #             n = 2
     #         y_true.append(n)
     # else:
-    true_data_file = "/content/drive/My Drive/Dataset/test_1910.csv"
+    true_data_file = "/content/drive/My Drive/Dataset/true_test.csv"
 
     df = pd.read_csv(true_data_file,sep='\t',header=None).values
     y_true=[]
@@ -136,22 +136,24 @@ def get_y_pred(pred_data_dir):
         while s:
             tmp.append([float(s[2])])
             count += 1
-            if count % 5 == 0:
+            if count % 4 == 0:
                 tmp_sum = np.sum(tmp)
                 t = []
-                for i in range(5):
+                for i in range(4):
                     t.append(tmp[i] / tmp_sum)
                 score.append(t)
-                if t[0] >= t[1] and t[0] >= t[2] and t[0]>=t[3] and t[0]>=t[4]:
-                    pred.append(0)
-                elif t[1] >= t[0] and t[1] >= t[2] and t[1]>=t[3] and t[1]>=t[4]:
-                    pred.append(1)
-                elif t[2] >= t[0] and t[2] >= t[1] and t[2]>=t[3] and t[2]>=t[4]:
-                    pred.append(2)
-                elif t[3] >= t[0] and t[3] >= t[1] and t[3]>=t[2] and t[3]>=t[4]:
-                    pred.append(3)
-                else:
-                    pred.append(4)
+                # if t[0] >= t[1] and t[0] >= t[2] and t[0]>=t[3] and t[0]>=t[4]:
+                #     pred.append(0)
+                # elif t[1] >= t[0] and t[1] >= t[2] and t[1]>=t[3] and t[1]>=t[4]:
+                #     pred.append(1)
+                # elif t[2] >= t[0] and t[2] >= t[1] and t[2]>=t[3] and t[2]>=t[4]:
+                #     pred.append(2)
+                # elif t[3] >= t[0] and t[3] >= t[1] and t[3]>=t[2] and t[3]>=t[4]:
+                #     pred.append(3)
+                # else:
+                #     pred.append(4)
+                
+                pred.append(t.index(max(t)))
                 tmp = []
             s = f.readline().strip().split()
     # else: 
@@ -297,9 +299,9 @@ def semeval_PRF(y_true, y_pred):
         s=set()
         g=set()
         for j in range(5):
-            if y_pred[i*5+j]!=4:
+            if y_pred[i*5+j]!=3:
                 s.add(j)
-            if y_true[i*5+j]!=4:
+            if y_true[i*5+j]!=3:
                 g.add(j)
         if len(g)==0:continue
         s_g=s.intersection(g)
@@ -360,14 +362,14 @@ def semeval_Acc(y_true, y_pred, score, classes=4):
         total=0
         total_right=0
         for i in range(len(y_true)):
-            if y_true[i]>=3 or y_true[i]==1:continue
+            if y_true[i]>=2:continue #or y_true[i]==1:continue
             total+=1
             tmp=y_pred[i]
-            if tmp>=3 or tmp==1:
-                if score[i][0]>=score[i][2]:
+            if tmp>=2: #or tmp==1:
+                if score[i][0]>=score[i][1]:
                     tmp=0
                 else:
-                    tmp=2
+                    tmp=1
             if y_true[i]==tmp:
                 total_right+=1
         sentiment_Acc = total_right/total
@@ -409,13 +411,13 @@ def main():
     y_true = get_y_true()
     y_pred, score = get_y_pred(args.pred_data_dir)
     aspect_P, aspect_R, aspect_F = semeval_PRF(y_true, y_pred)
-    sentiment_Acc_4_classes = semeval_Acc(y_true, y_pred, score, 4)
+    # sentiment_Acc_4_classes = semeval_Acc(y_true, y_pred, score, 4)
     sentiment_Acc_3_classes = semeval_Acc(y_true, y_pred, score, 3)
     sentiment_Acc_2_classes = semeval_Acc(y_true, y_pred, score, 2)
     result = {'aspect_Precision': aspect_P,
             'aspect_Recall': aspect_R,
             'aspect_F1': aspect_F,
-            'sentiment_Acc_4_classes': sentiment_Acc_4_classes,
+            # 'sentiment_Acc_4_classes': sentiment_Acc_4_classes,
             'sentiment_Acc_3_classes': sentiment_Acc_3_classes,
             'sentiment_Acc_2_classes': sentiment_Acc_2_classes}
 
