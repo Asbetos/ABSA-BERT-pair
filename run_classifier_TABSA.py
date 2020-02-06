@@ -394,8 +394,7 @@ def main():
             nb_tr_steps += 1
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 optimizer.step()    # We have accumulated enought gradients
-                optimizer.zero_grad()
-                # model.zero_grad()
+                model.zero_grad()
                 global_step += 1
         
         # eval_test
