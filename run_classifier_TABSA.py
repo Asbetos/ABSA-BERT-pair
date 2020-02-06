@@ -51,7 +51,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         label_map[label] = i
 
     features = []
-    for (ex_index, example) in enumerate(tqdm(examples)):
+    for (_, example) in enumerate(tqdm(examples)):
         tokens_a = tokenizer.tokenize(example.text_a)
 
         tokens_b = None
@@ -339,7 +339,7 @@ def main():
         test_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
         test_dataloader = DataLoader(test_data, batch_size=args.eval_batch_size, shuffle=False)
 
-
+        del all_input_ids, all_input_mask, all_label_ids, all_segment_ids
     # model and optimizer
     model = BertForSequenceClassification(bert_config, len(label_list))
     if args.init_checkpoint is not None:
@@ -394,7 +394,8 @@ def main():
             nb_tr_steps += 1
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 optimizer.step()    # We have accumulated enought gradients
-                model.zero_grad()
+                optimizer.zero_grad()
+                # model.zero_grad()
                 global_step += 1
         
         # eval_test
