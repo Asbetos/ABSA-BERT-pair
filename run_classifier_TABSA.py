@@ -241,7 +241,18 @@ def main():
     parser.add_argument('--gradient_accumulation_steps',
                         type=int,
                         default=1,
-                        help="Number of updates steps to accumualte before performing a backward/update pass.")                       
+                        help="Number of updates steps to accumualte before performing a backward/update pass.")  
+
+    parser.add_argument('--save_model',
+                            type=str,
+                            default=None,
+                            help="Path to save the trained model to")
+                            
+    parser.add_argument('--load_model',
+                            type=str,
+                            default=None,
+                            help="Path to load the trained model from")                        
+    
     args = parser.parse_args()
 
 
@@ -341,10 +352,14 @@ def main():
 
         del all_input_ids, all_input_mask, all_label_ids, all_segment_ids
     # model and optimizer
+
     model = BertForSequenceClassification(bert_config, len(label_list))
+
+
     if args.init_checkpoint is not None:
         model.bert.load_state_dict(torch.load(args.init_checkpoint, map_location='cpu'))
     model.to(device)
+
 
     if args.local_rank != -1:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank],
@@ -372,9 +387,23 @@ def main():
             writer.write("epoch\tglobal_step\tloss\ttest_loss\ttest_accuracy\n")
         else:
             writer.write("epoch\tglobal_step\tloss\n")
+
+    if args.load_model:
+        checkpoint = torch.load(args.load_model)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        epoch = checkpoint['epoch']
+        checkpoint_loss = checkpoint['loss']
+        global_step = checkpoint['global_step']   
+        print("===Loaded previous checkpoint===")
+        for key in checkpoint:
+            print(key,"=",checkpoint[key])
+
     
-    global_step = 0
-    epoch=0
+    else:
+        global_step = 0
+        epoch = 0
+    
     for _ in trange(int(args.num_train_epochs), desc="Epoch"):
         epoch+=1
         model.train()
@@ -396,6 +425,7 @@ def main():
                 optimizer.step()    # We have accumulated enought gradients
                 model.zero_grad()
                 global_step += 1
+        
         
         # eval_test
         if args.eval_test:
@@ -451,6 +481,16 @@ def main():
                 logger.info("  %s = %s\n", key, str(result[key]))
                 writer.write("%s\t" % (str(result[key])))
             writer.write("\n")
+        
+
+    if args.save_model:
+        torch.save({'model_state_dict':model.state_dict(),
+                    'epoch':epoch,
+                    'optimizer_state_dict':optimizer.state_dict(),
+                    'loss':tr_loss/nb_tr_steps,
+                    'global_step':global_step,
+                    },f=args.save_model)
+
 
 if __name__ == "__main__":
     main()
