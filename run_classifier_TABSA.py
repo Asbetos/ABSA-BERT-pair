@@ -21,11 +21,7 @@ from tqdm import tqdm, trange
 import tokenization
 from modeling import BertConfig, BertForSequenceClassification
 from optimization import BERTAdam
-from processor import (Semeval_NLI_B_Processor, Semeval_NLI_M_Processor,
-                       Semeval_QA_B_Processor, Semeval_QA_M_Processor,
-                       Semeval_single_Processor, Sentihood_NLI_B_Processor,
-                       Sentihood_NLI_M_Processor, Sentihood_QA_B_Processor,
-                       Sentihood_QA_M_Processor, Sentihood_single_Processor)
+from processor import processor_class
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s', 
                     datefmt = '%m/%d/%Y %H:%M:%S',
@@ -151,14 +147,6 @@ def main():
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--task_name",
-                        default=None,
-                        type=str,
-                        required=True,
-                        choices=["sentihood_single", "sentihood_NLI_M", "sentihood_QA_M", \
-                                "sentihood_NLI_B", "sentihood_QA_B", "semeval_single", \
-                                "semeval_NLI_M", "semeval_QA_M", "semeval_NLI_B", "semeval_QA_B"],
-                        help="The name of the task to train.")
     parser.add_argument("--data_dir",
                         default=None,
                         type=str,
@@ -221,7 +209,7 @@ def main():
                         default=0.1,
                         type=float,
                         help="Proportion of training to perform linear learning rate warmup for. "
-                             "E.g., 0.1 = 10%% of training.")
+                             "E.g., 0.1 = 10% of training.")
     parser.add_argument("--no_cuda",
                         default=False,
                         action='store_true',
@@ -291,20 +279,8 @@ def main():
 
 
     # prepare dataloaders
-    processors = {
-        "sentihood_single":Sentihood_single_Processor,
-        "sentihood_NLI_M":Sentihood_NLI_M_Processor,
-        "sentihood_QA_M":Sentihood_QA_M_Processor,
-        "sentihood_NLI_B":Sentihood_NLI_B_Processor,
-        "sentihood_QA_B":Sentihood_QA_B_Processor,
-        "semeval_single":Semeval_single_Processor,
-        "semeval_NLI_M":Semeval_NLI_M_Processor,
-        "semeval_QA_M":Semeval_QA_M_Processor,
-        "semeval_NLI_B":Semeval_NLI_B_Processor,
-        "semeval_QA_B":Semeval_QA_B_Processor,
-    }
 
-    processor = processors[args.task_name]()
+    processor = processor_class()
     label_list = processor.get_labels()
 
     tokenizer = tokenization.FullTokenizer(
@@ -393,7 +369,6 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         epoch = checkpoint['epoch']
-        checkpoint_loss = checkpoint['loss']
         global_step = checkpoint['global_step']   
         print("===Loaded previous checkpoint===")
         for key in checkpoint:
@@ -409,7 +384,7 @@ def main():
         model.train()
         tr_loss = 0
         nb_tr_examples, nb_tr_steps = 0, 0
-        for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+        for step, batch in tqdm(enumerate(train_dataloader, desc="Iteration")):
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
             loss, _ = model(input_ids, segment_ids, input_mask, label_ids)
@@ -484,12 +459,22 @@ def main():
         
 
     if args.save_model:
-        torch.save({'model_state_dict':model.state_dict(),
-                    'epoch':epoch,
-                    'optimizer_state_dict':optimizer.state_dict(),
-                    'loss':tr_loss/nb_tr_steps,
-                    'global_step':global_step,
-                    },f=args.save_model)
+        try:
+            torch.save({'model_state_dict':model.state_dict(),
+                        'epoch':epoch,
+                        'optimizer_state_dict':optimizer.state_dict(),
+                        'loss':tr_loss/nb_tr_steps,
+                        'global_step':global_step,
+                        },f=args.save_model)
+        
+        except FileNotFoundError:
+            f = open(args.save_model,"w+")
+            torch.save({'model_state_dict':model.state_dict(),
+                        'epoch':epoch,
+                        'optimizer_state_dict':optimizer.state_dict(),
+                        'loss':tr_loss/nb_tr_steps,
+                        'global_step':global_step,
+                        },f=f)
 
 
 if __name__ == "__main__":
