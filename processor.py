@@ -64,22 +64,22 @@ class processor_class(DataProcessor):
 
     def get_train_examples(self, data_dir):
         """See base class."""
-        train_data = pd.read_csv(os.path.join(data_dir, "train_1910.csv"),header=None,sep="\t").values
+        train_data = pd.read_csv(os.path.join(data_dir, "senti_train.csv"),header=None).values
         return self._create_examples(train_data, "train")
 
     def get_dev_examples(self, data_dir):
         """See base class."""
-        dev_data = pd.read_csv(os.path.join(data_dir, "dev_NLI_B.csv"),header=None,sep="\t").values
+        dev_data = pd.read_csv(os.path.join(data_dir, "dev_NLI_B.csv"),header=None).values
         return self._create_examples(dev_data, "dev")
 
     def get_test_examples(self, data_dir):
         """See base class."""
-        test_data = pd.read_csv(os.path.join(data_dir, "test_1910.csv"),header=None,sep="\t").values
+        test_data = pd.read_csv(os.path.join(data_dir, "senti_test.csv"),header=None).values
         return self._create_examples(test_data, "test")
 
     def get_labels(self):
         """See base class."""
-        return ['0', '1']
+        return ['0', '1', '2']
 
     def _create_examples(self, lines, set_type):
         """Creates examples for the training and dev sets."""
@@ -87,9 +87,9 @@ class processor_class(DataProcessor):
         for (i, line) in enumerate(lines):
           #  if i>50:break
             guid = "%s-%s" % (set_type, i)
-            text_a = tokenization.convert_to_unicode(str(line[2]))
-            text_b = tokenization.convert_to_unicode(str(line[3]))
-            label = tokenization.convert_to_unicode(str(line[1]))
+            text_a = tokenization.convert_to_unicode(str(line[1]))
+            text_b = tokenization.convert_to_unicode(str(line[2]))
+            label = tokenization.convert_to_unicode(str(line[3]))
             if i%1000==0:
                 print(i)
                 print("guid=",guid)
