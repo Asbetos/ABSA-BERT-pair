@@ -64,17 +64,17 @@ class processor_class(DataProcessor):
 
     def get_train_examples(self, data_dir):
         """See base class."""
-        train_data = pd.read_csv(os.path.join(data_dir, "senti_train.csv"),header=None).values
+        train_data = pd.read_csv(os.path.join(data_dir, "train_sentiment.csv"),header=None).values
         return self._create_examples(train_data, "train")
 
     def get_dev_examples(self, data_dir):
         """See base class."""
-        dev_data = pd.read_csv(os.path.join(data_dir, "dev_NLI_B.csv"),header=None).values
+        dev_data = pd.read_csv(os.path.join(data_dir, "dev.csv"),header=None).values
         return self._create_examples(dev_data, "dev")
 
     def get_test_examples(self, data_dir):
         """See base class."""
-        test_data = pd.read_csv(os.path.join(data_dir, "senti_test.csv"),header=None).values
+        test_data = pd.read_csv(os.path.join(data_dir, "test_sentiment.csv"),header=None).values
         return self._create_examples(test_data, "test")
 
     def get_labels(self):
